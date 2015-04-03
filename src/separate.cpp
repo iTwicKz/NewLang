@@ -10,8 +10,10 @@ Lang:Lang(){
 	this->errorCount = 0;
 	this->identifiers = "";
 	this->constants = "";
-	this->operatosr = "";
+	this->operators = "";
 	this->delimeters = "";
+	this->leftParenCount = 0;
+	this->rightParenCount = 0;
 }
 
 void Lang::parseLine(string line){
@@ -19,17 +21,53 @@ void Lang::parseLine(string line){
 	for(int i = 0; i < line.size(); i++){
 		char curr = line.at(i);
 
-		if(curr >= 65 && curr <= 90){
-			parseUpper(line, i);
+		if(curr >= 65 && curr <= 90){  //check for capital letters
+			i = parseUpper(line, i);
 		}
-		else if(curr >= 97 && curr <= 122){
-			parseLower(line, i);
+		else if(curr >= 97 && curr <= 122){  //check for lowercase letters
+			i = parseLower(line, i);
 		}
+		else if((curr == 33 || curr == 38 || curr == 40 || curr == 41 || curr == 42 || 
+			     curr == 43 || curr == 45 || curr == 47) || (curr >= 59 && curr <= 62)){
+			     curr == 43 || curr == 45 || curr == 47) || (curr >= 59 && curr <= 62)){
+			i = parseSymbol(line, i);
+		}
+
 	}
 
 }
 
-void Lang::parseUpper(string line, int index){
+int Lang::parseSymbol(string line, int index){
+
+	const string delimiterList[] = {"(", ")", ";", ","};
+	const string operatorList[] = {"+", "-", "*", "/", "++", "--", "=", "==", "<", ">", "&&", "||", "!"};
+
+	string curr = line.at(index);
+
+	if(line.at(index) == '+' || line.at(index) == '-' || line.at(index) == '=' || line.at(index) == '&' || line.at(index) == '|'){
+		string nextLet = line.at(index + 1);
+		if(curr.compare(nextLet) == 0){
+			curr = curr + curr;
+			index++;
+		}
+	}
+
+	for(int i = 0; i < delimiterList.length; i++){
+		if(delimiterList[i] == curr){
+			parseDelimiter(delimiterList, curr);
+			return index;
+		}
+	}
+
+	for(int i = 0; i < operatorList.length; i++){
+		if(operatorList[i] == curr){
+			parseOperator(operatorList, curr);
+			return index;
+		}
+	}
+}
+
+int Lang::parseUpper(string line, int index){
 
 	string tempKey = "";
 	tempKey += line.at(index);
@@ -40,11 +78,11 @@ void Lang::parseUpper(string line, int index){
 	}
 
 	isKeyword(tempKey);
-
+	return index--;
 
 }
 
-void Lang::parseLower(string line, int index){
+int Lang::parseLower(string line, int index){
 
 	string tempKey = "";
 	tempKey += line.at(index);
@@ -55,8 +93,7 @@ void Lang::parseLower(string line, int index){
 	}
 
 	addIdentifier(tempKey);
-
-
+	return index--;
 }
 
 void Lang::isKeyword(string word){

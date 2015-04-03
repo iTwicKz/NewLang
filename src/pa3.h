@@ -11,12 +11,15 @@ class Lang{
 		string constants;
 		string operators;
 		string delimiters;
+		int leftParenCount;
+		int rightParenCount;
 	
 	public:
 		Lang();
 		void parseLine(string line);
-		void parseUpper(string line, int index);
-		void parseLower(string line, int index);
+		int parseSymbol(string line, int index);
+		int parseUpper(string line, int index);
+		int parseLower(string line, int index);
 		void isKeyword(string word);
 		void keyWordError(string word, string messError);
 		void addIdentifier(string word);

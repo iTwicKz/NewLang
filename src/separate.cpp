@@ -1,10 +1,20 @@
+#include <string>
+#include <vector>
+#include "pa3.h"
+using namespace std;
+
 Lang:Lang(){
 	this->forUsed = false;
 	this->keyIsUsed[7] = {false};
-	this->errors
+	vector<string> this->error(1); 
+	this->errorCount = 0;
+	this->identifiers = "";
+	this->constants = "";
+	this->operatosr = "";
+	this->delimeters = "";
 }
 
-void parseLine(string line){
+void Lang::parseLine(string line){
 
 	for(int i = 0; i < line.size(); i++){
 		char curr = line.at(i);
@@ -19,7 +29,7 @@ void parseLine(string line){
 
 }
 
-void parseUpper(string line, int index){
+void Lang::parseUpper(string line, int index){
 
 	string tempKey = "";
 	tempKey += line.at(index);
@@ -34,7 +44,7 @@ void parseUpper(string line, int index){
 
 }
 
-void parseLower(string line, int index){
+void Lang::parseLower(string line, int index){
 
 	string tempKey = "";
 	tempKey += line.at(index);
@@ -49,7 +59,7 @@ void parseLower(string line, int index){
 
 }
 
-void isKeyword(string word){
+void Lang::isKeyword(string word){
 	const string keywords[] = {"BEGIN", "END", "FOR", "WHILE", "IF", "ELSE", "ELSEIF"};
 	int keyIndex = -1;
 
@@ -62,18 +72,23 @@ void isKeyword(string word){
 	bool keyIsUsed[7] = {false};
 
 	if(keyIndex == -1){
-		keyWordError(word);
+		keyWordError(word, "noKeyword");
 	}
 	else{
 		keyIsUsed[i] = true;
 	}
 }
 
-void keyWordError(string word){
-	//add an error to a list of error key words which occur
+void Lang::keyWordError(string word, string messError){
+
+	if(messError.compare("noKeyword") == 0){ //if the error is from isKeyword
+		error.push_back("Error(" + errorCount + "): " + word + " is not a keyword.");
+		errorCount++;
+	}
+		
 }
 
 
 void Lang::addIdentifier(string word){
-
+	identifiers = identifiers + " " + word;
 }

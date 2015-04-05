@@ -1,8 +1,9 @@
 #include <string>
 #include <vector>
-#include "pa3.h"
+
 using namespace std;
 
+/*
 Lang:Lang(){
 	this->forUsed = false;
 	this->keyIsUsed[7] = {false};
@@ -15,8 +16,23 @@ Lang:Lang(){
 	this->leftParenCount = 0;
 	this->rightParenCount = 0;
 }
+*/
+bool forUsed = false;
+vector<string> error(); 
+int errorCount = 0;
+string identifiers = "Identifiers: ";
+string constants = "Constants: ";
+bool keyIsUsed[7] = {false};
+bool operatorsUsed[13] = {false};
+bool delimetersUsed[4] = {false};
+int leftParenCount = 0;
+int rightParenCount = 0;
 
-void Lang::parseLine(string line){
+const string operatorList[] = {"+", "-", "*", "/", "++", "--", "=", "==", "<", ">", "&&", "||", "!"};
+const string delimiterList[] = {"(", ")", ";", ","};
+const string keywords[] = {"BEGIN", "END", "FOR", "WHILE", "IF", "ELSE", "ELSEIF"};
+
+void parseLine(string line){
 
 	for(int i = 0; i < line.size(); i++){
 		char curr = line.at(i);
@@ -27,20 +43,31 @@ void Lang::parseLine(string line){
 		else if(curr >= 97 && curr <= 122){  //check for lowercase letters
 			i = parseLower(line, i);
 		}
-		else if((curr == 33 || curr == 38 || curr == 40 || curr == 41 || curr == 42 || 
-			     curr == 43 || curr == 45 || curr == 47) || (curr >= 59 && curr <= 62)){
-			     curr == 43 || curr == 45 || curr == 47) || (curr >= 59 && curr <= 62)){
+		else if(curr == '+' || curr == '-' || curr == '*' || curr == '/' || curr == '=' || 
+			     curr == '<' || curr == '>' || curr == '&' || curr == '|' || curr == '!' ||
+			      curr == '(' || curr == ')' || curr == ';' || curr == ','){
 			i = parseSymbol(line, i);
 		}
-
+		else if(curr >= 48 && curr <= 57){ //check for digits
+			i = parseDigits(line, i);
+		}
 	}
-
 }
 
-int Lang::parseSymbol(string line, int index){
+int parseDigits(string line, int index){
+	string num = "";
+	num += line.at(index);
+	index++;
+	while(line.at(index) >= 48 && line.at(index) <= 57){
+		num += line.at(index);
+		index++;
+	}
 
-	const string delimiterList[] = {"(", ")", ";", ","};
-	const string operatorList[] = {"+", "-", "*", "/", "++", "--", "=", "==", "<", ">", "&&", "||", "!"};
+	operators += num + " ";
+	return index--;
+}
+
+int parseSymbol(string line, int index){
 
 	string curr = line.at(index);
 
@@ -54,20 +81,22 @@ int Lang::parseSymbol(string line, int index){
 
 	for(int i = 0; i < delimiterList.length; i++){
 		if(delimiterList[i] == curr){
-			parseDelimiter(delimiterList, curr);
+			//parseDelimiter(curr);
+			delimetersUsed[i] = true;
 			return index;
 		}
 	}
 
 	for(int i = 0; i < operatorList.length; i++){
 		if(operatorList[i] == curr){
-			parseOperator(operatorList, curr);
+			//parseOperator(curr);
+			operatorsUsed[i] = true;
 			return index;
 		}
 	}
 }
 
-int Lang::parseUpper(string line, int index){
+int parseUpper(string line, int index){
 
 	string tempKey = "";
 	tempKey += line.at(index);
@@ -82,7 +111,7 @@ int Lang::parseUpper(string line, int index){
 
 }
 
-int Lang::parseLower(string line, int index){
+int parseLower(string line, int index){
 
 	string tempKey = "";
 	tempKey += line.at(index);
@@ -92,12 +121,13 @@ int Lang::parseLower(string line, int index){
 		index++;
 	}
 
-	addIdentifier(tempKey);
+	if(identifiers.find(tempKey) == string::npos){
+		identifiers += tempKey + " ";}
 	return index--;
 }
 
-void Lang::isKeyword(string word){
-	const string keywords[] = {"BEGIN", "END", "FOR", "WHILE", "IF", "ELSE", "ELSEIF"};
+void isKeyword(string word){
+
 	int keyIndex = -1;
 
 	for(int i = 0; i < keywords.length; i++){
@@ -106,17 +136,19 @@ void Lang::isKeyword(string word){
 		}
 	}
 
-	bool keyIsUsed[7] = {false};
-
 	if(keyIndex == -1){
 		keyWordError(word, "noKeyword");
 	}
 	else{
 		keyIsUsed[i] = true;
 	}
+
+	switch(keyIndex){
+		case 0: //DO THIS PART
+	}
 }
 
-void Lang::keyWordError(string word, string messError){
+void keyWordError(string word, string messError){
 
 	if(messError.compare("noKeyword") == 0){ //if the error is from isKeyword
 		error.push_back("Error(" + errorCount + "): " + word + " is not a keyword.");
@@ -125,7 +157,31 @@ void Lang::keyWordError(string word, string messError){
 		
 }
 
+void print(){
+	cout << "Keywords: ";
+	for(int i = 0; i < keyIsUsed.length; i++){
+		if(keyIsUsed[i]){
+			cout << keywords[i] << " ";
+		}
+	} cout << endl;
 
-void Lang::addIdentifier(string word){
-	identifiers = identifiers + " " + word;
+	cout << identifiers;
+
+	cout << constants;
+
+	cout << "Operatros: ";
+	for(int i = 0; i < operatorsUsed.length; i++){
+		if(operatorsUsed[i]){
+			cout << operatorList[i] << " ";
+		}
+	} cout << endl;
+
+	cout << "Delimiters: ";
+	for(int i = 0; i < delimetersUsed.length; i++){
+		if(delimetersUsed[i]){
+			cout << delimiterList[i] << " ";
+		}
+	} cout << endl;
+
 }
+

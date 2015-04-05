@@ -10,7 +10,7 @@ int main(){
 	string fileName;
 	cin >> fileName;
 
-	vector<string> fileLines;
+	//vector<string> fileLines;
 
 
 	ifstream input (fileName);
@@ -25,20 +25,8 @@ int main(){
 
 	else count << "Unable to open file";
 
-	//const string keywords[] = {"BEGIN", "END", "FOR", "WHILE", "IF", "ELSE", "ELSEIF"};
-	//const char operators[] = {'+', '-', '*', '/', }
-
-
-
+	print();
 }
 
 
-
-void readFiles(){}
-	ifstream myfile; //intializing file
-	myfile.open("program.txt"); //opening and directing to text file
-	
-	}
-}
-}
 	

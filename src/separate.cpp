@@ -112,10 +112,10 @@ int parseLower(string line, int index){
 	while(line.at(index) >= 97 && line.at(index) <= 122){
 		tempKey += line.at(index);
 		//cout<<index;
-		if(index <= static_cast<int>(line.size())){
+		if(index < static_cast<int>(line.size()) - 1){
 			index++;
 
-			break;  }
+			  }
 	}
 	
 	bool isUsed = false;
@@ -128,7 +128,7 @@ int parseLower(string line, int index){
 	//cout<<tempKey;
 	//cout<<index;
 	//cout <<index;
-	return index--;
+	return index;
 }
 
 
@@ -506,8 +506,7 @@ int main(){
 
 	
 	loopMax += abs(loopCount);
-	if(loopMax == 1) cout << "The depth of nested loop is 1" << endl;
-	else if(loopMax > 1) cout << "The depth of nested loops are " << loopMax << endl;
+	if(loopMax > 0) cout << "The depth of nested loops is " << loopMax << endl;
 	else cout<<"Program does not contain loops" << endl;
 
 	print();

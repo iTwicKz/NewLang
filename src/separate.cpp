@@ -1,55 +1,54 @@
-#include <string>
-#include <vector>
-#include <iostream>
-#include <fstream>
-#include <stack>
-#include <cmath> //std::abs
+#include <string>		//strings
+#include <vector>   	//for output strings
+#include <iostream>		//takes in file name
+#include <fstream>		//reading file
+#include <stack>		//finding depth of loops
+#include <cmath> 		//absolute value
 
 using namespace std;
 
-string line;
+string line;				//input file is taken line by line
 
-vector<string> error; 
-vector<string> constants;
-vector<string> identifiers;
+vector<string> error; 		//errors
+vector<string> constants;	//constants
+vector<string> identifiers;	//identifiers
 
-int errorCount = 0;
+int errorCount = 0;			//allows for error to be counted
 
-stack <string> loopStack;
-int loopMax = 0;
-int loopCount = 0;
+stack <string> loopStack;	//traces depth of loop
+int loopMax = 0;			//max depth reached
+int loopCount = 0;			//depth at moment
 
-int leftParenCount = 0;
-int rightParenCount = 0;
+int leftParenCount = 0;		//counts total left parentheses
+int rightParenCount = 0;	//counts total right parentheses
 
-bool parenInLine = false;
-bool parenAfter = false;
-
-//++++++++++++++++++++++++++++++ DICTIONARIES ++++++++++++++++++++++++++++++++++++++++++//
+//++++++++++++++++++++++++++++++ DICTIONARIES +++++++++++++++++++++++++++++++++++++++++++++++++++//
 
 const string operatorList[] = {"+", "-", "*", "/", "++", "--", "=", "==", "<", ">", "&&", "||", "!"};
- bool operatorsUsed[13];
+ bool operatorsUsed[13];	//avoids repeats
 const string delimiterList[] = {"(", ")", ";", ","};
- bool delimetersUsed[4];
+ bool delimetersUsed[4];	//avoids repeats
 const string keywords[] = {"BEGIN", "END", "FOR", "WHILE", "IF", "ELSE", "ELSEIF"};
- bool keyIsUsed[7];
+ bool keyIsUsed[7];			//avoid repeats
 
 //++++++++++++++++++++++++++++++ ERROR CHECKING +++++++++++++++++++++++++++++++++++++++++++//
 
-int forUsed = 0;
-int loopUsed = 0;
-bool keywordFirst = false;
-bool ifIsUsed = false;
+int forUsed = 0;			//checks if previous line is FOR
+int loopUsed = 0;			//checks if previous line is WHILE
+bool keywordFirst = false;  //checks if first word is a keyword
+bool ifIsUsed = false;		//checks if IF was used previously
 
-int parseDigits(string line, int index){
+//+++++++++++++++++++++++++++++++++ METHODS ++++++++++++++++++++++++++++++++++++++++++++//
+
+int parseDigits(string line, int index){ //takes in digits
 	
 	string num = "";
 	num += line.at(index);
 	
-	int size = static_cast<int>(line.size());
-	if(index != size){ //make sure its not last
+	int size = static_cast<int>(line.size());			//static_cast USED TO PARSE type_size TO int
+	if(index != size){ 
 		index++;
-		while(line.at(index) >= 48 && line.at(index) <= 57){
+		while(line.at(index) >= 48 && line.at(index) <= 57){   //appends other consequetive digits
 			num += line.at(index);
 			index++;
 		}
@@ -57,10 +56,10 @@ int parseDigits(string line, int index){
 
 	bool isUsed = false;
 	for(unsigned i = 0; i < constants.size(); i++){
-		if(num.compare(constants[i]) == 0) isUsed = true;
+		if(num.compare(constants[i]) == 0) isUsed = true;		//checks for duplicates
 	}
 	if(!isUsed){
-		constants.push_back(num); }
+		constants.push_back(num); }								//adds constant to vector
 	
 	return index--;
 }
@@ -68,12 +67,12 @@ int parseDigits(string line, int index){
 int parseSymbol(string line, int index){
 	
 	string curr = ""; 
-	curr += line.at(index);
+	curr += line.at(index);			
 
 	if(line.at(index) == '+' || line.at(index) == '-' || line.at(index) == '=' || line.at(index) == '&' || line.at(index) == '|'){
-		string nextLet = "";
+		string nextLet = "";								//checking for the double symbol operators
 		if(index <= static_cast<int>(line.size())){
-			nextLet += line.at(index + 1); 
+			nextLet += line.at(index + 1); 					//doubles symbol
 			if(curr.compare(nextLet) == 0){
 				curr = curr + curr;
 				index++;
@@ -81,19 +80,15 @@ int parseSymbol(string line, int index){
 		}
 	}
 
-	for(int i = 0; i < 4; i++){
-		//delimetersUsed[i] = false;
+	for(int i = 0; i < 4; i++){								//checking if delimiter
 		if(delimiterList[i] == curr){
-			//parseDelimiter(curr);
 			delimetersUsed[i] = true;
 			return index;
 		}
 	}
 
-	for(int i = 0; i < 13; i++){
+	for(int i = 0; i < 13; i++){							//checking if operator
 		if(operatorList[i] == curr){
-			//operatorsUsed[i] = false;
-			//parseOperator(curr);
 			operatorsUsed[i] = true;
 			return index;
 		}
@@ -102,233 +97,193 @@ int parseSymbol(string line, int index){
 }
 
 
-int parseLower(string line, int index){
+int parseLower(string line, int index){						//looking for identifiers
 	
 	string tempKey = "";
 	tempKey += line.at(index);
 	if( index < static_cast<int>(line.size()) - 1)
 		index++;
 
-	while(line.at(index) >= 97 && line.at(index) <= 122){
-		tempKey += line.at(index);
-		//cout<<index;
+	while(line.at(index) >= 97 && line.at(index) <= 122){	//checks if next char is lowercase
+		tempKey += line.at(index);							//if so, append
 		if(index < static_cast<int>(line.size()) - 1){
 			index++;
 
 			  }
 	}
 	
-	bool isUsed = false;
+	bool isUsed = false;			
 	for(unsigned i = 0; i < identifiers.size(); i++){
-		if(tempKey.compare(identifiers[i]) == 0) isUsed = true;
+		if(tempKey.compare(identifiers[i]) == 0) isUsed = true;	//checks for duplicates
 	}
 	if(!isUsed){
-		identifiers.push_back(tempKey); }
+		identifiers.push_back(tempKey); }						//adds to vector
 	index--;
-	//cout<<tempKey;
-	//cout<<index;
-	//cout <<index;
 	return index;
 }
 
 
 void errorParser(string word, string messError){
 
-	if(messError.compare("noKeyword") == 0){ //if the error is from isKeyword
+	if(messError.compare("noKeyword") == 0){ 			//ERROR FOR INVALID KEYWORD
 		error.push_back(word + " is not a keyword.");
 		errorCount++;
 	}
-
-	else if(messError.compare("noSemicolon") == 0){
-
+	else if(messError.compare("noSemicolon") == 0){ 	//ERROR FOR NO SEMICOLON
 		error.push_back("Missing semicolon");
 		errorCount++;
 	}
-
-	else if(messError.compare("leftParen") == 0){
+	else if(messError.compare("leftParen") == 0){ 		//ERROR FOR MISSING LEFT PARENTHESES
 		error.push_back("Invalid parentheses: Missing ( in " + word);
 		errorCount++;
 	}
-
-	else if(messError.compare("rightParen") == 0){
+	else if(messError.compare("rightParen") == 0){ 		//ERROR FOR MISSING RIGHT PARENTHESES
 		error.push_back("Invalid parentheses: Missing ) in " + word);
 		errorCount++;
 	}
-
-	else if(messError.compare("parenInOrder") == 0){
+	else if(messError.compare("parenInOrder") == 0){	//ERROR FOR PARENTHESES OUT OF ORDER
 		error.push_back("Invalid parentheses: Parentheses out of order in " + word);
 		errorCount++;
 	}
-	else if(messError.compare("forLoopParen") == 0){
+	else if(messError.compare("forLoopParen") == 0){ 	//ERROR FOR NON-LOGICAL STATEMENT
 		error.push_back("Invalid statement after for loop");
 		errorCount++;
 	}
-	else if(messError.compare("tooManyCommas") == 0){
+	else if(messError.compare("tooManyCommas") == 0){ 	//ERROR FOR MORE THAN TWO COMMAS IN FOR
 		error.push_back("For loop statement has too many commas.");
 		errorCount++;
 	}
-	else if(messError.compare("noIf") == 0){
+	else if(messError.compare("noIf") == 0){            //ERROR FOR NO IF BEFORE ELSE
 		error.push_back("No IF before this " + word);
 		errorCount++;
 	}
-	else if(messError.compare("missingBegin") == 0){
+	else if(messError.compare("missingBegin") == 0){ 	//ERROR FOR NO BEGIN
 		error.push_back("Missing BEGIN");
 		errorCount++;
 	}
-	else if(messError.compare("endMissing") == 0){
+	else if(messError.compare("endMissing") == 0){ 		//ERROR FOR NO END
 		error.push_back("Missing END");
 		errorCount++;
 	}
-	else if(messError.compare("missForBegin") == 0){
+	else if(messError.compare("missForBegin") == 0){ 	// ERROR FOR NO LOOP BEFORE BEGIN
 		error.push_back("Missing Loop before BEGIN");
 		errorCount++;
 	}
-	else if(messError.compare("noBegin") == 0){
+	else if(messError.compare("noBegin") == 0){ 		// ERROR FOR NO BEGIN AFTER LOOP
 		error.push_back("No BEGIN after " + word);
 		errorCount++;
 	}
-	else if(messError.compare("invalidParen") == 0){
+	else if(messError.compare("invalidParen") == 0){ 	//ERROR FOR INVALID PARENTHESES
 		error.push_back("Invalid Parentheses.");
 		errorCount++;
 	}
 		
 }
 
-void checkCommas(int left, int right){
+void checkCommas(int left, int right){			//checks for commas after for loop
 	int comma1 = -1;
 	int comma2 = -1;
 	bool overCommas = false;
 	for(unsigned i = 0; i < line.size(); i++){
 		
-		if(line.at(i) == ',' && comma1 > -1){ comma2 = i; break; }
-		else if(line.at(i) == ',') comma1 = i;
-		else if(line.at(i) == ',' && comma1 > -1 && comma2 > -1) {overCommas = true;}
+		if(line.at(i) == ',' && comma1 > -1){ comma2 = i; break; }		//if there is already one comma
+		else if(line.at(i) == ',') comma1 = i;							//if initial comma is found
+		else if(line.at(i) == ',' && comma1 > -1 && comma2 > -1) {overCommas = true;}	 //if there are already two commas
 	}
 
 	if(overCommas) errorParser("", "tooManyCommas");
 	else if(!(comma1 > left && comma2 > left && comma1 < right && comma2 < right)){
-		errorParser("", "forLoopParen");
+		errorParser("", "forLoopParen");	//Commas are not in parentheses
 	}
 
 }
 
-void checkParentheses(string which){
+void checkParentheses(string which){   						//Checks if parentheses are in order
 	
-	//bool leftParen = false;
 	int leftParenIndex = -1;
 	int rightParenIndex = -1;
-	//bool rightParen = false;
-	//bool inOrder = false;
+	
 	for(unsigned i = 0; i < line.length(); i++){
-		if(line.at(i) == '(') leftParenIndex = i;
-		
-		else if(line.at(i) == ')') rightParenIndex = i;
+		if(line.at(i) == '(') leftParenIndex = i;			//finds left parentheses
+		else if(line.at(i) == ')') rightParenIndex = i;		//finds right parentheses
 	}
 	if(leftParenIndex < 0) errorParser(which, "leftParen");
 	else if(rightParenIndex < 0) errorParser(which, "rightParen");
-	else if(rightParenIndex - leftParenIndex < 0) errorParser(which, "parenInOrder");
+	else if(rightParenIndex - leftParenIndex < 0) errorParser(which, "parenInOrder"); //checks )(
 
 	if(which.compare("For loop") == 0){
 		checkCommas(leftParenIndex, rightParenIndex);
 	}
 }
 
-/*
-void checkLogic(string which){
-	bool iden = false;
-	bool cons = false;
-	bool oper = false;
-	for(unsigned i = 0; i < line.length(); )
-}
-*/
-
-
-void isKeyword(string word){
+void isKeyword(string word){						//checks if uppercase is keyword
 	
 	int keyIndex = -1;
 
-	for(int i = 0; i <7; i++){
-		if(word.compare(keywords[i]) == 0){
+	for(int i = 0; i < 7; i++){
+		if(word.compare(keywords[i]) == 0){			//looks through dictionary of Keywords
 			keyIndex = i;
 		}
 	}
 
-	//cout<<forUsed;
 	if(loopUsed == 2){
 		if(keyIndex != 0){
-			errorParser("loop.", "noBegin");
+			errorParser("loop.", "noBegin");		//checks if there was a BEGIN after loop
 			loopCount--;
 		}
 	}
 	
-
 	if(keyIndex == -1){
-		errorParser(word, "noKeyword");
+		errorParser(word, "noKeyword");				//if no keyword match if found
 	}
 	else{
-		keyIsUsed[keyIndex] = true;
+		keyIsUsed[keyIndex] = true;					//ensure that no duplicate prints
 	}
 
 	switch(keyIndex){
 		case 0:{ //BEGIN
-			if(loopUsed != 2) errorParser("", "missForBegin"); 
-			
-
-			//loopStack.push("BEGIN");
-			//loopMax++;
-
+			if(loopUsed != 2) errorParser("", "missForBegin"); //Makes sure there was a previous loop
 			break;
 		}
 		case 1:{ //END
-
-			//if(!forUsed) errorParser("BEGIN", "missFor");
-			
 			string check = loopStack.top();
-			//cout<<check;
-
-			
-			if(check.compare("BEGIN") == 0){
+			if(check.compare("BEGIN") == 0){				//checks if there is a BEGIN
 				loopStack.pop();
 			}
-
-			else errorParser("", "missingBegin");
+			else errorParser("", "missingBegin");			//if not, create an error
 			
-			if(loopCount > loopMax) loopMax = loopCount;
-
-			loopCount--;
+			if(loopCount > loopMax) loopMax = loopCount;	//checks for max loop depth
+			loopCount--;									//decreases current loop depth count
 
 			break;
 		}
 		case 2:{ //FOR
-			loopUsed = 1;
-			checkParentheses("For loop");
-
-			loopStack.push("BEGIN");
-			loopCount++;
-			
+			loopUsed = 1;						//marks that FOR has started
+			checkParentheses("For loop");		//checks parentheses
+			loopStack.push("BEGIN");			//adds BEGIN to stack
+			loopCount++;						//increases count
+		
 			break;
 		}
 		case 3:{ //WHILE
-			loopUsed = 1;
-			checkParentheses("While loop");
-			//checkLogic("While loop");
-			loopStack.push("BEGIN");
-			loopCount++;
+			loopUsed = 1;						//marks that WHILE has started
+			checkParentheses("While loop");		//checks parentheses
+			loopStack.push("BEGIN");			//adds BEGIN to stack
+			loopCount++;						//increases count
 			break;
 		}
 		case 4:{ //IF
 			ifIsUsed = true;
-			checkParentheses("If statement");
-			//checkLogic("If statement");
+			checkParentheses("If statement");						//checks for parentheses
 			break;
 		}
 		case 5:{ //ELSE
-			if(!ifIsUsed) errorParser("Else statement", "noIf");
+			if(!ifIsUsed) errorParser("Else statement", "noIf");	//checks for if
 			break;
 		}
 		case 6:{ //ELSEIF
-			if(!ifIsUsed) errorParser("Else-if statement", "noIf");
-			checkParentheses("Else-if statement");
+			if(!ifIsUsed) errorParser("Else-if statement", "noIf");	//checks for if
+			checkParentheses("Else-if statement");					//checks for parentheses
 			break;
 		}
 	}
@@ -338,14 +293,12 @@ void isKeyword(string word){
 
 int parseUpper(string line, int index){
 
-
 	string tempKey = "";
 	tempKey += line.at(index);
 	if(index < static_cast<int>(line.size()))
 		index++;
 	while(line.at(index) >= 65 && line.at(index) <= 90){
 		tempKey += line.at(index);
-		//cout<< "parseUpper";
 		if(index == static_cast<int>(line.size()) - 1) break;
 		else index++;
 	}
@@ -355,7 +308,8 @@ int parseUpper(string line, int index){
 
 }
 
-void parenCheck(string line){
+void parenCheck(string line){					//increases parentheses count, which is checked later
+	
 	for(unsigned i = 0; i < line.size(); i++){
 		if(line.at(i) == '(') leftParenCount++;
 		if(line.at(i) == ')') rightParenCount++;
@@ -368,41 +322,35 @@ void parseLine(string line){
 		char curr = line.at(i);
 
 		if(loopUsed == 2){
-			if(curr != 'B'){
+			if(curr != 'B'){					//ensures that loop is followed by BEGIN
 				errorParser("loop.", "noBegin");
 				loopCount--;
 				loopUsed = 0;
 			}
 		}
 
-		//cout<<curr;
-		if(curr >= 65 && curr <= 90){  //check for capital letters
+		if(curr >= 65 && curr <= 90){  			//check for capital letters
 			if(i == 0) keywordFirst = true;
 			i = parseUpper(line, i);
 		}
-		else if(curr >= 97 && curr <= 122){  //check for lowercase letters
+		else if(curr >= 97 && curr <= 122){  	//check for lowercase letters
 			i = parseLower(line, i);
-
 		}
+												//check for all special characters
 		else if(curr == '+' || curr == '-' || curr == '*' || curr == '/' || curr == '=' || 
 			     curr == '<' || curr == '>' || curr == '&' || curr == '|' || curr == '!' ||
 			      curr == '(' || curr == ')' || curr == ';' || curr == ','){
 			
 			i = parseSymbol(line, i);
 		}
-		else if(curr >= 48 && curr <= 57){ //check for digits
+		else if(curr >= 48 && curr <= 57){ 		//check for digits
 			i = parseDigits(line, i);
 		}
-
-
 	}
 
-	if(!keywordFirst){
-
-		if(line.at(static_cast<int>(line.size()) - 1) != ';'){
-
+	if(!keywordFirst){			//checks if there was initially a keyword
+		if(line.at(static_cast<int>(line.size()) - 1) != ';'){	//if not, the statement must end with semicolon
 			errorParser("", "noSemicolon");
-			
 		}
 	}
 	
@@ -410,7 +358,7 @@ void parseLine(string line){
 
 void print(){
 
-	//printing keywords
+	//+++++++ printing keywords +++++++++++++++++++++++++++++++++++++++++++//
 	cout << "Keywords: ";
 	for(int i = 0; i < 7; i++){
 		if(keyIsUsed[i]){
@@ -418,21 +366,21 @@ void print(){
 		}
 	} cout << endl;
 
-	//printing identifiers
+	//++++++++ printing identifiers +++++++++++++++++++++++++++++++++//
 	cout<< "Identifiers: ";
 	for(unsigned i = 0; i < identifiers.size(); i++){
 		cout << identifiers[i] << " ";
 	}
 	cout<<endl;
 
-	//printing constants
+	//++++++++ printing constants ++++++++++++++++++++++++++++//
 	cout<< "Constants: ";
 	for(unsigned i = 0; i < constants.size(); i++){
 		cout << constants[i] << " ";
 	}
 	cout<<endl;
 
-	//printing operators
+	//++++++++ printing operators +++++++++++++++++++++//
 	cout << "Operatros: ";
 	for(int i = 0; i < 13; i++){
 		if(operatorsUsed[i]){
@@ -440,100 +388,80 @@ void print(){
 		}
 	} cout << endl;
 
-	//printing delimiters
+	//++++++++ printing delimiters ++++++++++++++//
 	cout << "Delimiters: ";
 	for(int i = 0; i < 4; i++){
-		//cout << "Del";
 		if(delimetersUsed[i]){
 			cout << delimiterList[i] << " ";
 		}
 	} cout << endl << endl;
 
-	//printing all errors
+	//++++++++ printing all errors +++++++//
 	for(int i = 0; i < errorCount; i++){
 		cout << "Error(" << i+1 << "): " << error[i] << endl;
 	}
 }
 
-int main(){
+int main(int argc, char* argv[]){
 	try{
-	cout << "Please enter the file path:" << endl;
-	string fileName;
-	//cin >> fileName;
+		cout << "Please enter the file path:" << endl;
+		const char* fileName = argv[1];		//recieves fileName through command
+		cout << fileName << endl << endl;
+		if(argc > 0){
+		ifstream input (fileName, ios::in);	//intializes stream for input file			
+		loopStack.push("Start");			//sets bases of the stack
 
-	ifstream input ("program.txt");
-	//string line;
-	loopStack.push("Start");
+		//if(argc > 1){
+		if(input.is_open()){				//checks if file is open
+			while (getline(input, line)){	//iterates line by line
+					
+				parseLine(line);	
 
-	if(input.is_open()){
-		while (getline(input, line)){
-			
-			
-			cout << line << endl;
-			
-			parseLine(line);
+				//++++++Reitializing Values+++++++++//
+				keywordFirst = false;
 
-			//reseting some errors
-			keywordFirst = false;
+				if(loopUsed > 0){					//sees if loop was in this line
+					loopUsed++;
+				}
+				if(loopUsed > 2){					//sees if loop was two lines ago
+					loopUsed = 0;					//if so, reset count
+				}
+				
 
-			if(loopUsed > 0){
-				loopUsed++;
+				parenCheck(line);							//checks parentheses in line
+				if(leftParenCount != rightParenCount){
+					errorParser("", "invalidParen");
+				}
+
+				leftParenCount = 0;
+				rightParenCount = 0;
+
 			}
-			if(loopUsed > 2){
-				loopUsed = 0;
-			}
-			
+			input.close();
 
-			parenCheck(line);
-			if(leftParenCount != rightParenCount){
-				errorParser("", "invalidParen");
+			if(loopStack.top().compare("Start") != 0){    //sees if there is anything left in stack
+				errorParser("", "endMissing");
 			}
 
-			leftParenCount = 0;
-			rightParenCount = 0;
+			loopMax += abs(loopCount);					//checks if there is uncalled for loop depth
+			if(loopMax > 0) cout << "The depth of nested loops is " << loopMax << endl << endl;
+			else cout<<"Program does not contain loops" << endl << endl;
 
+			print();			//prints rest of values
 		}
-		input.close();
+
+		else cout << "Unable to open file";
 	}
 
-	else cout << "Unable to open file";
 
-
-
-	if(loopStack.top().compare("Start") != 0){
-		errorParser("", "endMissing");
-	}
-
-	
-	loopMax += abs(loopCount);
-	if(loopMax > 0) cout << "The depth of nested loops is " << loopMax << endl;
-	else cout<<"Program does not contain loops" << endl;
-
-	print();
-	
-
-	/*
-
-	stack <string> cards;
-	cards.push("King of Hearts");
-	cards.push("Yo bro");
-	cards.push("Heyo");
-
-	cout << cards.top() << endl;
-
-	cards.pop();
-	cout << cards.size() << endl;
-	cout << cards.top() << endl;
-
-
-	*/
+		
 
 	}
-	catch (exception const &exc)
+	catch (exception const &exc)			//catches error due to invalid input file
     {
         cerr << "Exception caught " << exc.what() << "\n";
     }
-    catch (...)
+    catch (...)								//catches any other errors
     {
         cerr << "Unknown exception caught\n";
     }

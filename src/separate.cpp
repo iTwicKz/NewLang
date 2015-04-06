@@ -6,13 +6,13 @@
 
 using namespace std;
 
-
-bool forUsed = false;
-vector<string> error(); 
+vector<string> error; 
+vector<string> constants;
+vector<string> identifiers;
 string errorString = "";
 int errorCount = 0;
-string identifiers = "";
-string constants = "Constants: ";
+//string identifiers = "";
+//string constants = "Constants: ";
 bool keyIsUsed[7] = {false};
 
 bool operatorsUsed[13];
@@ -20,16 +20,23 @@ bool delimetersUsed[4];
 int leftParenCount = 0;
 int rightParenCount = 0;
 
+//++++++++++++++++++++++++++++++ DICTIONARIES ++++++++++++++++++++++++++++++++++++++++++//
+
 const string operatorList[] = {"+", "-", "*", "/", "++", "--", "=", "==", "<", ">", "&&", "||", "!"};
 const string delimiterList[] = {"(", ")", ";", ","};
 const string keywords[] = {"BEGIN", "END", "FOR", "WHILE", "IF", "ELSE", "ELSEIF"};
 
+//++++++++++++++++++++++++++++++ ERROR CHECKING +++++++++++++++++++++++++++++++++++++++++++//
+
+bool forUsed = false;
+bool keywordFirst = false;
+
 
 int parseDigits(string line, int index){
-	//cout << "parseDigits";
+	
 	string num = "";
 	num += line.at(index);
-	cout << line.at(index);
+	
 	int size = static_cast<int>(line.size());
 	if(index != size){ //make sure its not last
 		index++;
@@ -38,13 +45,19 @@ int parseDigits(string line, int index){
 			index++;
 		}
 	}
-	constants += num + " ";
+
+	bool isUsed = false;
+	for(unsigned i = 0; i < constants.size(); i++){
+		if(num.compare(constants[i]) == 0) isUsed = true;
+	}
+	if(!isUsed){
+		constants.push_back(num); }
+	
 	return index--;
 }
 
 int parseSymbol(string line, int index){
-	//cout << "parseSymbol";
-
+	
 	string curr = ""; 
 	curr += line.at(index);
 
@@ -58,8 +71,6 @@ int parseSymbol(string line, int index){
 			}
 		}
 	}
-
-	//cout << curr;
 
 	for(int i = 0; i < 4; i++){
 		//delimetersUsed[i] = false;
@@ -83,33 +94,45 @@ int parseSymbol(string line, int index){
 
 
 int parseLower(string line, int index){
-	//cout << "parseLower";
-
+	
 	string tempKey = "";
 	tempKey += line.at(index);
-	if( index < static_cast<int>(line.size()) )
+	if( index < static_cast<int>(line.size()) - 1)
 		index++;
+
 	while(line.at(index) >= 97 && line.at(index) <= 122){
 		tempKey += line.at(index);
-		if(index < static_cast<int>(line.size()))
+		cout<<index;
+		if(index <= static_cast<int>(line.size())){
 			index++;
-	}
 
-	if(identifiers.find(tempKey) == string::npos){
-		identifiers += tempKey + " ";}
+			break;  }
+	}
+	
+	bool isUsed = false;
+	for(unsigned i = 0; i < identifiers.size(); i++){
+		if(tempKey.compare(identifiers[i]) == 0) isUsed = true;
+	}
+	if(!isUsed){
+		identifiers.push_back(tempKey); }
 	index--;
+	cout<<tempKey;
+	cout<<index;
 	//cout <<index;
 	return index--;
 }
 
 
-void keyWordError(string word, string messError){
+void errorParser(string word, string messError){
 
 	if(messError.compare("noKeyword") == 0){ //if the error is from isKeyword
-		
-		errorString += "Johnny Bravo" + word + " is not a keyword." + "\n";
-		//string errorMessage = "Error(" + errString + "): " + word + " is not a keyword."
-		
+		error.push_back(word + " is not a keyword.");
+		errorCount++;
+	}
+
+	else if(messError.compare("noSemicolon") == 0){
+
+		error.push_back("Missing semicolon");
 		errorCount++;
 	}
 		
@@ -117,7 +140,7 @@ void keyWordError(string word, string messError){
 
 
 void isKeyword(string word){
-	//cout <<"isKeyword";
+	
 	int keyIndex = -1;
 
 	for(int i = 0; i <7; i++){
@@ -127,7 +150,7 @@ void isKeyword(string word){
 	}
 
 	if(keyIndex == -1){
-		keyWordError(word, "noKeyword");
+		errorParser(word, "noKeyword");
 	}
 	else{
 		keyIsUsed[keyIndex] = true;
@@ -163,13 +186,14 @@ void parseLine(string line){
 
 	for(int i = 0; i < static_cast<int>(line.size()); i++){
 		char curr = line.at(i);
-		cout << curr;
-
+		cout<<curr;
 		if(curr >= 65 && curr <= 90){  //check for capital letters
+			if(i == 0) keywordFirst = true;
 			i = parseUpper(line, i);
 		}
 		else if(curr >= 97 && curr <= 122){  //check for lowercase letters
 			i = parseLower(line, i);
+
 		}
 		else if(curr == '+' || curr == '-' || curr == '*' || curr == '/' || curr == '=' || 
 			     curr == '<' || curr == '>' || curr == '&' || curr == '|' || curr == '!' ||
@@ -180,11 +204,23 @@ void parseLine(string line){
 		else if(curr >= 48 && curr <= 57){ //check for digits
 			i = parseDigits(line, i);
 		}
-		//cout << i << " ";
+
 	}
+
+	if(!keywordFirst){
+
+		if(line.at(static_cast<int>(line.size()) - 1) != ';'){
+
+			errorParser("", "noSemicolon");
+			
+		}
+	}
+	
 }
 
 void print(){
+
+	//printing keywords
 	cout << "Keywords: ";
 	for(int i = 0; i < 7; i++){
 		if(keyIsUsed[i]){
@@ -192,28 +228,41 @@ void print(){
 		}
 	} cout << endl;
 
-	cout << "Identifiers: " << identifiers << endl;
+	//printing identifiers
+	cout<< "Identifiers: ";
+	for(unsigned i = 0; i < identifiers.size(); i++){
+		cout << identifiers[i] << " ";
+	}
+	cout<<endl;
 
-	cout << constants << endl;
+	//printing constants
+	cout<< "Constants: ";
+	for(unsigned i = 0; i < constants.size(); i++){
+		cout << constants[i] << " ";
+	}
+	cout<<endl;
 
+	//printing operators
 	cout << "Operatros: ";
 	for(int i = 0; i < 13; i++){
-		//cout << "OOpers";
 		if(operatorsUsed[i]){
 			cout << operatorList[i] << " ";
 		}
 	} cout << endl;
 
+	//printing delimiters
 	cout << "Delimiters: ";
 	for(int i = 0; i < 4; i++){
 		//cout << "Del";
 		if(delimetersUsed[i]){
 			cout << delimiterList[i] << " ";
 		}
-	} cout << endl;
+	} cout << endl << endl;
 
-	cout << errorString;
-
+	//printing all errors
+	for(int i = 0; i < errorCount; i++){
+		cout << "Error(" << i+1 << "): " << error[i] << endl;
+	}
 }
 
 int main(){
@@ -229,7 +278,9 @@ int main(){
 		while (getline(input, line)){
 			cout << line << endl;
 			parseLine(line);
-			cout << endl;
+			
+			//reseting some errors
+			keywordFirst = false;
 		}
 		input.close();
 	}

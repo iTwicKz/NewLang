@@ -1,8 +1,9 @@
 #include <string>
 #include <vector>
-//#include <array>
 #include <iostream>
 #include <fstream>
+#include <stack>
+#include <cmath> //std::abs
 
 using namespace std;
 
@@ -11,29 +12,34 @@ string line;
 vector<string> error; 
 vector<string> constants;
 vector<string> identifiers;
-string errorString = "";
-int errorCount = 0;
-//string identifiers = "";
-//string constants = "Constants: ";
-bool keyIsUsed[7] = {false};
 
-bool operatorsUsed[13];
-bool delimetersUsed[4];
+int errorCount = 0;
+
+stack <string> loopStack;
+int loopMax = 0;
+int loopCount = 0;
+
 int leftParenCount = 0;
 int rightParenCount = 0;
+
+bool parenInLine = false;
+bool parenAfter = false;
 
 //++++++++++++++++++++++++++++++ DICTIONARIES ++++++++++++++++++++++++++++++++++++++++++//
 
 const string operatorList[] = {"+", "-", "*", "/", "++", "--", "=", "==", "<", ">", "&&", "||", "!"};
+ bool operatorsUsed[13];
 const string delimiterList[] = {"(", ")", ";", ","};
+ bool delimetersUsed[4];
 const string keywords[] = {"BEGIN", "END", "FOR", "WHILE", "IF", "ELSE", "ELSEIF"};
+ bool keyIsUsed[7];
 
 //++++++++++++++++++++++++++++++ ERROR CHECKING +++++++++++++++++++++++++++++++++++++++++++//
 
-bool forUsed = false;
+int forUsed = 0;
+int loopUsed = 0;
 bool keywordFirst = false;
 bool ifIsUsed = false;
-
 
 int parseDigits(string line, int index){
 	
@@ -165,21 +171,42 @@ void errorParser(string word, string messError){
 		error.push_back("No IF before this " + word);
 		errorCount++;
 	}
+	else if(messError.compare("missingBegin") == 0){
+		error.push_back("Missing BEGIN");
+		errorCount++;
+	}
+	else if(messError.compare("endMissing") == 0){
+		error.push_back("Missing END");
+		errorCount++;
+	}
+	else if(messError.compare("missForBegin") == 0){
+		error.push_back("Missing Loop before BEGIN");
+		errorCount++;
+	}
+	else if(messError.compare("noBegin") == 0){
+		error.push_back("No BEGIN after " + word);
+		errorCount++;
+	}
+	else if(messError.compare("invalidParen") == 0){
+		error.push_back("Invalid Parentheses.");
+		errorCount++;
+	}
 		
 }
 
 void checkCommas(int left, int right){
 	int comma1 = -1;
 	int comma2 = -1;
-	bool overCommas;
+	bool overCommas = false;
 	for(unsigned i = 0; i < line.size(); i++){
+		
 		if(line.at(i) == ',' && comma1 > -1){ comma2 = i; break; }
 		else if(line.at(i) == ',') comma1 = i;
-		else if(line.at(i) == ',' && comma1 > -1 && comma2 > -1) overCommas = true;
+		else if(line.at(i) == ',' && comma1 > -1 && comma2 > -1) {overCommas = true;}
 	}
 
 	if(overCommas) errorParser("", "tooManyCommas");
-	else if(!(comma1 > left && comma2 > left && comma1 < right && comma2 < left)){
+	else if(!(comma1 > left && comma2 > left && comma1 < right && comma2 < right)){
 		errorParser("", "forLoopParen");
 	}
 
@@ -226,29 +253,67 @@ void isKeyword(string word){
 		}
 	}
 
+	//cout<<forUsed;
+	if(loopUsed == 2){
+		if(keyIndex != 0){
+			errorParser("loop.", "noBegin");
+			loopCount--;
+		}
+	}
+	
+
 	if(keyIndex == -1){
 		errorParser(word, "noKeyword");
 	}
 	else{
 		keyIsUsed[keyIndex] = true;
 	}
-//const string keywords[] = {"BEGIN", "END", "FOR", "WHILE", "IF", "ELSE", "ELSEIF"};
 
 	switch(keyIndex){
 		case 0:{ //BEGIN
+			if(loopUsed != 2) errorParser("", "missForBegin"); 
+			
+
+			//loopStack.push("BEGIN");
+			//loopMax++;
+
 			break;
 		}
 		case 1:{ //END
+
+			//if(!forUsed) errorParser("BEGIN", "missFor");
+			
+			string check = loopStack.top();
+			//cout<<check;
+
+			
+			if(check.compare("BEGIN") == 0){
+				loopStack.pop();
+			}
+
+			else errorParser("", "missingBegin");
+			
+			if(loopCount > loopMax) loopMax = loopCount;
+
+			loopCount--;
+
 			break;
 		}
 		case 2:{ //FOR
+			loopUsed = 1;
 			checkParentheses("For loop");
+
+			loopStack.push("BEGIN");
+			loopCount++;
 			
 			break;
 		}
 		case 3:{ //WHILE
+			loopUsed = 1;
 			checkParentheses("While loop");
 			//checkLogic("While loop");
+			loopStack.push("BEGIN");
+			loopCount++;
 			break;
 		}
 		case 4:{ //IF
@@ -290,10 +355,26 @@ int parseUpper(string line, int index){
 
 }
 
+void parenCheck(string line){
+	for(unsigned i = 0; i < line.size(); i++){
+		if(line.at(i) == '(') leftParenCount++;
+		if(line.at(i) == ')') rightParenCount++;
+	}
+}
+
 void parseLine(string line){
 
 	for(int i = 0; i < static_cast<int>(line.size()); i++){
 		char curr = line.at(i);
+
+		if(loopUsed == 2){
+			if(curr != 'B'){
+				errorParser("loop.", "noBegin");
+				loopCount--;
+				loopUsed = 0;
+			}
+		}
+
 		//cout<<curr;
 		if(curr >= 65 && curr <= 90){  //check for capital letters
 			if(i == 0) keywordFirst = true;
@@ -312,6 +393,7 @@ void parseLine(string line){
 		else if(curr >= 48 && curr <= 57){ //check for digits
 			i = parseDigits(line, i);
 		}
+
 
 	}
 
@@ -381,20 +463,72 @@ int main(){
 
 	ifstream input ("program.txt");
 	//string line;
+	loopStack.push("Start");
 
 	if(input.is_open()){
 		while (getline(input, line)){
+			
+			
 			cout << line << endl;
+			
 			parseLine(line);
+
 			//reseting some errors
 			keywordFirst = false;
+
+			if(loopUsed > 0){
+				loopUsed++;
+			}
+			if(loopUsed > 2){
+				loopUsed = 0;
+			}
+			
+
+			parenCheck(line);
+			if(leftParenCount != rightParenCount){
+				errorParser("", "invalidParen");
+			}
+
+			leftParenCount = 0;
+			rightParenCount = 0;
+
 		}
 		input.close();
 	}
 
 	else cout << "Unable to open file";
 
+
+
+	if(loopStack.top().compare("Start") != 0){
+		errorParser("", "endMissing");
+	}
+
+	
+	loopMax += abs(loopCount);
+	if(loopMax == 1) cout << "The depth of nested loop is 1" << endl;
+	else if(loopMax > 1) cout << "The depth of nested loops are " << loopMax << endl;
+	else cout<<"Program does not contain loops" << endl;
+
 	print();
+	
+
+	/*
+
+	stack <string> cards;
+	cards.push("King of Hearts");
+	cards.push("Yo bro");
+	cards.push("Heyo");
+
+	cout << cards.top() << endl;
+
+	cards.pop();
+	cout << cards.size() << endl;
+	cout << cards.top() << endl;
+
+
+	*/
+
 	}
 	catch (exception const &exc)
     {

@@ -1,6 +1,6 @@
 #include <string>
 #include <vector>
-#include <array>
+//#include <array>
 #include <iostream>
 #include <fstream>
 
@@ -30,7 +30,8 @@ int parseDigits(string line, int index){
 	string num = "";
 	num += line.at(index);
 	cout << line.at(index);
-	if(index != line.length()){ //make sure its not last
+	int size = static_cast<int>(line.size());
+	if(index != size){ //make sure its not last
 		index++;
 		while(line.at(index) >= 48 && line.at(index) <= 57){
 			num += line.at(index);
@@ -49,7 +50,7 @@ int parseSymbol(string line, int index){
 
 	if(line.at(index) == '+' || line.at(index) == '-' || line.at(index) == '=' || line.at(index) == '&' || line.at(index) == '|'){
 		string nextLet = "";
-		if(index <= line.size()){
+		if(index <= static_cast<int>(line.size())){
 			nextLet += line.at(index + 1); 
 			if(curr.compare(nextLet) == 0){
 				curr = curr + curr;
@@ -86,11 +87,11 @@ int parseLower(string line, int index){
 
 	string tempKey = "";
 	tempKey += line.at(index);
-	if(index < line.size())
+	if( index < static_cast<int>(line.size()) )
 		index++;
 	while(line.at(index) >= 97 && line.at(index) <= 122){
 		tempKey += line.at(index);
-		if(index < line.size())
+		if(index < static_cast<int>(line.size()))
 			index++;
 	}
 
@@ -106,7 +107,7 @@ void keyWordError(string word, string messError){
 
 	if(messError.compare("noKeyword") == 0){ //if the error is from isKeyword
 		
-		errorString += "Error(" + to_string(errorCount) + "): " + word + " is not a keyword." + "\n";
+		errorString += "Johnny Bravo" + word + " is not a keyword." + "\n";
 		//string errorMessage = "Error(" + errString + "): " + word + " is not a keyword."
 		
 		errorCount++;
@@ -144,12 +145,12 @@ int parseUpper(string line, int index){
 
 	string tempKey = "";
 	tempKey += line.at(index);
-	if(index < line.size())
+	if(index < static_cast<int>(line.size()))
 		index++;
 	while(line.at(index) >= 65 && line.at(index) <= 90){
 		tempKey += line.at(index);
 		//cout<< "parseUpper";
-		if(index == line.size() - 1) break;
+		if(index == static_cast<int>(line.size()) - 1) break;
 		else index++;
 	}
 	
@@ -160,7 +161,7 @@ int parseUpper(string line, int index){
 
 void parseLine(string line){
 
-	for(int i = 0; i < line.size(); i++){
+	for(int i = 0; i < static_cast<int>(line.size()); i++){
 		char curr = line.at(i);
 		cout << curr;
 
@@ -237,12 +238,14 @@ int main(){
 
 	print();
 	}
-	catch (std::exception const &exc)
+	catch (exception const &exc)
     {
-        std::cerr << "Exception caught " << exc.what() << "\n";
+        cerr << "Exception caught " << exc.what() << "\n";
     }
     catch (...)
     {
-        std::cerr << "Unknown exception caught\n";
+        cerr << "Unknown exception caught\n";
     }
 }
+
+//static_cast<int>(variable) used to convert from size_type to int value so that code compiles in g++
